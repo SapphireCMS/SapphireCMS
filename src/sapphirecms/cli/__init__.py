@@ -58,6 +58,7 @@ def install(name, env):
         if subprocess.run(["git", "clone", "https://github.com/SapphireCMS/SapphireBase.git", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
             spinner.fail("Could not clone SapphireCMS")
             raise ImportError("Could not clone SapphireCMS")
+        subprocess.run(["git", "remote", "remove", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         spinner.succeed("Cloned SapphireCMS")
     
     with Halo(text="Installing dependencies", spinner="dots2") as spinner:
@@ -77,7 +78,7 @@ def install(name, env):
         
     print('\nSapphireCMS website created successfully')
     print('To configure your website, move to the new directory and run:')
-    print('sapphirecms config')
+    print('sapphire config create Default')
         
 def run(mode):
     subprocess.run([pyexec, "-m", "CMS", mode])
@@ -203,7 +204,7 @@ class config_:
             open("config.py", "w").write("".join(configfile))
             print(f"Configuration '{id}' created successfully")
             print(f"Please confirm indentation of the configuration in 'config.py'")
-            print(f"To set this configuration as active, run 'sapphirecms config setactive {id}'")
+            print(f"To set this configuration as active, run 'sapphire config setactive {id}'")
         else:
             print(f"Configuration '{id}' already exists")
             
