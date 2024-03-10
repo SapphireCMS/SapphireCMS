@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sapphirecms"
+dynamic = ["version"]
+dependencies = [
+    "pyjwt",
+    "pymongo",
+    "requests",
+]
+requires-python = ">=3.11"
+authors = [
+    {name = "Sushant Shah", email = "mail@sushantshah.dev"},
+]
+maintainers = [
+    {name = "Sushant Shah", email = "mail@sushantshah.dev"},
+]
+description = "SapphireCMS is a modern, open-source, and easy-to-use Content Management System (CMS) for building websites. SapphireCMS is built on top of Python and is designed to be simple, flexible, and extensible. It is a great choice for building websites, blogs, and web applications. SapphireCMS is designed with simplicity, customizability, performance, and developer-friendliness in mind. SapphireCMS features a powerful and flexible theming system, a pythonic templating engine, and a simple and easy-to-use API for building web applications."
+readme = "README.md"
+license = {file = "LICENSE"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["sapphirecms.*"]
+
+[project.urls]
+Homepage = "https://sapphirecms.github.io/"
+Documentation = "https://sapphirecms.github.io/docs/"
+Repository = "https://github.com/SapphireCMS/SapphireCMS"
+
+[project.scripts]
+sapphire = "sapphirecms.cli:main"
