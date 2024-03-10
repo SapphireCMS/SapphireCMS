@@ -25,6 +25,9 @@ license = {file = "LICENSE"}
 where = ["src"]
 include = ["sapphirecms.*"]
 
+[tool.setuptools.dynamic]
+version = {attr = "sapphirecms.__version__"}
+
 [project.urls]
 Homepage = "https://sapphirecms.github.io/"
 Documentation = "https://sapphirecms.github.io/docs/"
