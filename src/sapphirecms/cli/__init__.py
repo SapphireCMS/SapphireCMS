@@ -88,7 +88,7 @@ class theme:
         if name.startswith("http"):
             subprocess.run(f"git clone {name} themes/{name.split('/')[-1].split('.')[0] if name.endswith('.git') else name.split('/')[-1]}", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         else:
-            subprocess.run(f"git clone https://github.com/SapphireCMS/{name}-Theme themes/{name}", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(f"git clone https://github.com/SapphireCMS/{name}Theme themes/{name}", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             
     def remove(name):
         try:
