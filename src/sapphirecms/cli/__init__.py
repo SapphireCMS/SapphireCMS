@@ -189,7 +189,15 @@ class config_:
                 "dbplatform": input("Enter the database platform for the website ['MongoDB'](MongoDB): "),
                 "secret_key": input("Enter the secret key for the website [Randomly generated]: ")
             }
+            
             c = {k: v if v != "" else b[k] for k, v in c.items()}
+            
+            if c["keywords"] != "" and "," in c["keywords"]:
+                c["keywords"] = [keyword.strip() for keyword in c["keywords"].split(",")]
+            elif c["keywords"] != "":
+                c["keywords"] = [c["keywords"].strip()]
+            else:
+                c["keywords"] = b["keywords"]
             
             match c["dbplatform"]:
                 case "MongoDB":
