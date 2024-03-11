@@ -1,5 +1,7 @@
 from .adapter import adpaters
 from .models import models
+import os, sys
+sys.path.append(os.getcwd())
 
 try:
     import config
