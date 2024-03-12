@@ -1,5 +1,7 @@
 # SapphireCMS
 
+SapphireCMS is a modern, open-source, and easy-to-use Content Management System (CMS) for building websites. SapphireCMS is built on top of Python and is designed to be simple, flexible, and extensible. It is a great choice for building websites, blogs, and web applications. SapphireCMS is designed with simplicity, customizability, performance, and developer-friendliness in mind. SapphireCMS features a powerful and flexible theming system, a pythonic templating engine, and a simple and easy-to-use API for building web applications.
+
 ## CLI
   A CLI application for managing SapphireCMS websites. 
   - Create a new SapphireCMS installation:
