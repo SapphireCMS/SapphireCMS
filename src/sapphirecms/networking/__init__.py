@@ -1,5 +1,5 @@
 import json
-import logging
+import pip
 import os, sys, select, socket
 import ssl
 import threading
@@ -182,6 +182,18 @@ class Server:
         
         self.secret_key = secret_key
     
+    def __call__(self, environ, start_response):
+        req = Request("\r\n".join([f"{environ['REQUEST_METHOD']} {environ['PATH_INFO']} {environ['SERVER_PROTOCOL']}"] + [f"{key[5:].replace('_', '-').title()}: {value}" for key, value in environ.items() if key.startswith("HTTP_")] + [f"{key.title()}: {value}" for key, value in environ.items() if key in ["CONTENT_TYPE", "CONTENT_LENGTH"]] + [(environ["wsgi.input"].read(int(environ["CONTENT_LENGTH"])).decode() if environ["CONTENT_LENGTH"] != "0" else "")  if "CONTENT_LENGTH" in environ else ""]))
+        worker = WSGIWorker(req, self.router, self.debug)
+        response = worker.handle_request()
+        hop_by_hop = ["connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers", "transfer-encoding", "upgrade"]
+        headers = response.headers.copy()
+        for key, _ in headers.items():
+            if key.lower() in hop_by_hop:
+                del response.headers[key]
+        start_response(response.status, list(response.headers.items()))
+        return [response.body.encode() if type(response.body) == str else response.body]
+    
     def start(self, sockets: list):
         """
         Starts the server.
@@ -230,6 +242,84 @@ class Server:
                     self.logger.info("Server stopped.")
                     return
             
+    def start_wsgi(self, server, socket_addrs: list):
+        """
+        Starts the server.
+        """
+    
+        match server:
+            case "wsgiref":
+                try:
+                    from wsgiref.simple_server import make_server
+                except ImportError:
+                    print("wsgiref not installed. Install? [y/n]")
+                    if input("wsgiref not installed. Install? [y/n]").lower() == "y":
+                        pip.main(["install", "wsgiref"])
+                        self.start(server)
+                        exit()
+                    else:
+                        raise I
+                if len(socket_addrs) > 1:
+                    self.logger.warning("wsgiref server does not support multiple sockets. Using first socket.")
+                httpd = make_server(socket_addrs[0][0], socket_addrs[0][1], self)
+                self.logger.info("Using wsgiref")
+                self.logger.info(f"Serving on {socket_addrs[0][0]}:{socket_addrs[0][1]}")
+                httpd.serve_forever()
+            case "waitress":
+                try:
+                    from waitress import serve
+                except ImportError:
+                    print("waitress not installed. Install? [y/n]")
+                    if input("waitress not installed. Install? [y/n]").lower() == "y":
+                        pip.main(["install", "waitress"])
+                        self.start(server)
+                        exit()
+                    else:
+                        raise I
+                self.logger.info("Using waitress")
+                self.logger.info(f"Serving on {' '.join([f'{host}:{port}' for host, port in socket_addrs])}")
+                serve(self, listen=" ".join([f"{host}:{port}" for host, port in socket_addrs]))
+            case "gunicorn":
+                try:
+                    from gunicorn.app.base import BaseApplication
+                except ImportError as I:
+                    print("gunicorn not installed. Install? [y/n]")
+                    if input("gunicorn not installed. Install? [y/n]").lower() == "y":
+                        pip.main(["install", "gunicorn"])
+                        self.start(server)
+                        exit()
+                    else:
+                        raise I
+                if len(socket_addrs) > 1:
+                    self.logger.warning("gunicorn server does not support multiple sockets. Using first socket.")
+                class GunicornApp(BaseApplication):
+                    def __init__(self, app, options=None):
+                        self.options = options or {}
+                        self.application = app
+                        super().__init__()
+                    def load_config(self):
+                        config = {key: value for key, value in self.options.items() if key in self.cfg.settings and value is not None}
+                        for key, value in config.items():
+                            self.cfg.set(key.lower(), value)
+                    def load(self):
+                        return self.application
+                options = {
+                    "bind": f"{socket_addrs[0][0]}:{socket_addrs[0][1]}",
+                    "workers": 4,
+                    "worker_class": "sync",
+                    "timeout": 120,
+                    "graceful_timeout": 120,
+                    "keepalive": 5,
+                    "accesslog": "-",
+                    "errorlog": "-",
+                    "loglevel": "info"
+                }
+                self.logger.info("Using gunicorn")
+                self.logger.info(f"Serving on {socket_addrs[0][0]}:{socket_addrs[0][1]}")
+                GunicornApp(self, options).run()
+            case _:
+                raise NotImplementedError(f"Server {server} not supported.")
+            
     def check_file_changes(self):
         """
         Checks for file changes and reloads the server if any changes are detected.
@@ -242,7 +332,7 @@ class Server:
                         os.execv(sys.executable, [f'"{sys.executable}"'] + [f'"{arg}"' for arg in sys.argv])
                     except:
                         self.logger.critical("An error occurred while trying to reload the server: %s" % traceback.format_exc())
-                
+
 class Worker:
     """
     Represents a worker that handles client requests.
@@ -305,6 +395,59 @@ class Worker:
         finally:
             self.client.disconnect()
         
+class WSGIWorker:
+    """
+    Represents a worker that handles client requests.
+
+    Args:
+        socket (socket): The socket object representing the client connection.
+        router (Router): The router object responsible for handling client requests.
+
+    Attributes:
+        socket (socket): The socket object representing the client connection.
+        router (Router): The router object responsible for handling client requests.
+        logger (Logger): The logger object for logging worker events.
+
+    """
+
+    def __init__(self, request, router, debug):
+        self.start_time = time.time()
+        self.request = request
+        self.router = router
+        self.debug = debug
+        
+    def handle_request(self):
+        """
+        Handles the client request.
+        """
+        logger = worker_logger(id(self))
+        request = self.request
+        try:
+            logger.info("%s %s" % (request.method, request.path))
+            handler, request_mod, response_mod, params = self.router.route(request)
+            if not handler:
+                return Response("404 Not Found", status=404)
+            for mod in request_mod:
+                request = mod(request)
+            response = handler(request, **params)
+            for mod in response_mod:
+                response = mod(response)
+            if type(response) == Response:
+                return response
+            elif type(response) == tuple:
+                if len(response) == 2 and type(response[0]) in [dict, list] and type(response[1]) == int:
+                    return Response(json.dumps(response[0]), status=response[1], content_type="application/json")
+                else:
+                    logger.critical("Invalid response format: %s" % response)
+                    return Response("500 Internal Server Error", status=500)
+            else:
+                return Response(response)            
+        except Exception as e:
+            logger.critical("An error occurred while handling the request: %s" % traceback.format_exc())
+            if self.debug:
+                return Response("500 Internal Server Error:\n\n%s" % traceback.format_exc(), status=500)
+            return Response("500 Internal Server Error", status=500)
+                
 if __name__ == "__main__":
     server = Server(5, 1024, None)
     server.start([Socket("localhost", 8080, 1024)])
