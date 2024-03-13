@@ -20,7 +20,7 @@ class Element:
     name = "element"
     paired = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, children=None, *args, **kwargs):
         """
         Initializes a new instance of the Element class.
 
@@ -31,10 +31,9 @@ class Element:
                 styles (list): The list of styles for the element.
         """
         self.attributes = list(args)
-        # self.children = kwargs.pop("children", []) if self.paired else []
+        
         if self.paired:
             self.children = []
-            children = kwargs.pop("children", [])
             if type(children) != list:
                 children = [children]
             if type(children) == str:
