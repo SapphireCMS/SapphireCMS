@@ -114,7 +114,7 @@ class TestHTML(unittest.TestCase):
         if fails == 0:
             print("All HTML tests passed.")
         else:
-            print(f"{fails}/{9} HTML tests failed.")
+            print(f"{fails} HTML tests failed.")
 
         
 
