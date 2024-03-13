@@ -1,5 +1,5 @@
 # Terminal application for managing a SapphireCMS website
-# sapphire install <name> [--env <bool>]: Install a new SapphireCMS website with the specified name and environment (optional).
+# sapphire install <name> [--env <bool> --mod <bool>]: Install a new SapphireCMS website with the specified name, environment (optional) and modifiablitity (optional).
 # sapphire config setactive <id>: Set the active configuration for the current SapphireCMS website.
 # sapphire config set <id> <data>: Set a value for the specified configuration for the current SapphireCMS website.
 # sapphire config get <id>: View the specified configuration for the current SapphireCMS website.
@@ -29,7 +29,8 @@ sys.path.append(os.getcwd())
 
 pyexec = "python3" if sys.platform in ["linux", "linux2", "darwin"] else "python"
 
-def install(name, env):
+def install(name, env, mod):
+    global pyexec
     print('\033[92m', 'Creating new SapphireCMS website', '\033[0m', sep='')
     with Halo(text="Checking current Python version", spinner="dots2") as spinner:
         if int("".join(subprocess.run([pyexec, "--version"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode("utf-8").split(" ")[1].split(".")[:2])) < 311:
@@ -50,16 +51,16 @@ def install(name, env):
     with Halo(text="Checking available storage", spinner="dots2") as spinner:
         import shutil
         if shutil.disk_usage(os.getcwd()).free < 2*(1024**3):
-            spinner.fail("Not enough space available")
+            spinner.fail("Not enough space available: " + str(shutil.disk_usage(os.getcwd()).free))
             raise MemoryError("Not enough space available")
         spinner.succeed("Enough space available")
     
     with Halo(text="Installing basic SapphireCMS project", spinner="dots2") as spinner:
         if subprocess.run(["git", "clone", "https://github.com/SapphireCMS/SapphireBase.git", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
-            spinner.fail("Could not clone SapphireCMS")
-            raise ImportError("Could not clone SapphireCMS")
+            spinner.fail("Could not clone Base Project")
+            raise ImportError("Could not clone Base Project")
         subprocess.run(["git", "remote", "remove", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        spinner.succeed("Cloned SapphireCMS")
+        spinner.succeed("Cloned Base Project")
     
     with Halo(text="Installing dependencies", spinner="dots2") as spinner:
         try:
@@ -68,13 +69,29 @@ def install(name, env):
                     spinner.fail("Could not install virtualenv")
                     raise ImportError("Could not install virtualenv")
                 subprocess.run([pyexec, "-m", "virtualenv", "env"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                pyexec = os.path.join(os.getcwd(), "env", "bin", "python3") if sys.platform in ["linux", "linux2", "darwin"] else os.path.join(os.getcwd(), "env", "Scripts", "python.exe")
                 exec(open("env/Scripts/activate_this.py").read(), {'__file__': "env/Scripts/activate_this.py"})
-                subprocess.run([pyexec, "-m", "pip", "install", "sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if not mod:
+                    subprocess.run([pyexec, "-m", "pip", "install", "sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run([pyexec, "-m", "pip", "install", "-r", "requirements.txt"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             spinner.succeed("Installed dependencies")
         except:
             spinner.fail("Could not install dependencies")
             raise ImportError("Could not install dependencies")
+    
+    if env and mod:
+        with Halo(text="Creating dedicated SapphireCMS installation (Modifiable)", spinner="dots2") as spinner:
+            if subprocess.run(["git", "clone", "https://github.com/SapphireCMS/SapphireCMS.git"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+                spinner.fail("Could not clone SapphireCMS")
+                raise ImportError("Could not clone SapphireCMS")
+            subprocess.run(["git", "remote", "remove", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            spinner.succeed("Cloned SapphireCMS (Modifiable)")
+            os.chdir("SapphireCMS")
+        with Halo(text="Installing SapphireCMS", spinner="dots2") as spinner:
+            if subprocess.run([pyexec, "-m", "pip", "install", "-e", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+                spinner.fail("Could not install SapphireCMS")
+                raise ImportError("Could not install SapphireCMS")
+            spinner.succeed("Installed SapphireCMS (Modifiable)")
         
     print('\nSapphireCMS website created successfully')
     print('To configure your website, move to the new directory and run:')
@@ -230,6 +247,7 @@ def main():
     install_parser = subparsers.add_parser("install", help="Install a new SapphireCMS website")
     install_parser.add_argument("name", help="The name of the new SapphireCMS website", default=".", nargs="?")
     install_parser.add_argument("-e", "--env", help="Create a new environment for this SapphireCMS website", action="store_true")
+    install_parser.add_argument("-m", "--mod", help="Create a modifiable installation for this SapphireCMS website", action="store_true")
     
     config_parser = subparsers.add_parser("config", help="Configure the current SapphireCMS website")
     config_parser.add_argument("action", help="The action to perform on the current SapphireCMS website", choices=["setactive", "set", "get", "create", "list"], nargs="?")
@@ -257,7 +275,7 @@ def main():
 
     match args.command:
         case "install":
-            install(args.name, args.env)
+            install(args.name, args.env, args.mod)
         case "config":
             try:
                 import config
