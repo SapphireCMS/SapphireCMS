@@ -23,7 +23,6 @@ license = {file = "LICENSE"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["sapphirecms.*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "sapphirecms.__version__"}
