@@ -27,7 +27,8 @@ from halo import Halo
 
 sys.path.append(os.getcwd())
 
-pyexec = "python3" if sys.platform in ["linux", "linux2", "darwin"] else "python"
+ver = sys.version_info
+pyexec = f"python{ver.major}.{ver.minor}" if sys.platform in ["linux", "linux2", "darwin"] else "python"
 
 def install(name, env, mod):
     global pyexec
