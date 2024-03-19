@@ -262,7 +262,7 @@ def main():
     serve_parser = subparsers.add_parser("serve", help="Serve the current SapphireCMS website")
 
     service_parser = subparsers.add_parser("service", help="Enable or disable the system service for the current SapphireCMS website")
-    service_parser.add_argument("args", help="Enable or disable the system service for the current SapphireCMS website", choices=["start", "stop", "restart", "false"], nargs="?")
+    service_parser.add_argument("args", help="Enable or disable the system service for the current SapphireCMS website", choices=["start", "stop", "restart", "false", "delete"], nargs="?")
     
     theme_parser = subparsers.add_parser("theme", help="Manage themes for the current SapphireCMS website")
     theme_parser.add_argument("action", help="The action to perform on the current SapphireCMS website", choices=["add", "remove", "list"], nargs="?")
@@ -318,6 +318,10 @@ def main():
                             subprocess.run(["systemctl", "stop", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         elif args.args[0] == "restart":
                             subprocess.run(["systemctl", "restart", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        elif args.args[0] == "delete":
+                            subprocess.run(["systemctl", "stop", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "disable", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["rm", f"/etc/systemd/system/{config.active.name}-sapphirecms.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         else:
                             raise ValueError("Invalid argument for command 'service'")
                     else:
