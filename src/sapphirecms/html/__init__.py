@@ -47,6 +47,7 @@ class Element:
             self.children = list(flatten(children))
         self.styles = kwargs.pop("styles", [])
         self.classes = kwargs.pop("classes", [])
+        self.attributes = kwargs.pop("attributes", [])
         if type(self.classes) == list:
             self.classes = " ".join(self.classes)
         for key, value in kwargs.items():
@@ -115,7 +116,7 @@ class Element:
         Returns:
             str: The prerendered element.
         """
-        return self.__class__(*self.attributes, children=''.join([str(child) for child in self.children]), styles=self.styles, classes=self.classes)
+        return self.__class__(children=[child.prerendered() if isinstance(child, Element) else child for child in getattr(self, "children", [])], styles=getattr(self, "styles", []), classes=getattr(self, "classes", []), attributes=getattr(self, "attributes", []))    
     
     def queryId(self, id):
         """
