@@ -326,7 +326,7 @@ def main():
                     else:
                         if args.args[0] == "false":
                             return
-                        execcommand = f"{pyexec} -m CMS prod" if "env" not in os.listdir() else f"{os.getcwd()}/env/bin/activate && {pyexec} -m CMS prod"
+                        execcommand = f"{pyexec} -m CMS prod"
                         open(f"{service_name}.service", "w").write(f"""[Unit]
     Description={config.active.name} SapphireCMS Service
     After=network.target
