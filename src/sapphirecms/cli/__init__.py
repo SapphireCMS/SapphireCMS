@@ -305,12 +305,10 @@ def main():
                 import config
             except:
                 raise ImportError("Could not find a valid SapphireCMS environment")
-            service_name = f"{config.active.name.replace(' ', '')}-sapphirecms"
+            service_name = f"{config.active.name.replace(' ', '')}-sapphire"
             args.args = [args.args] if args.args is not None else []
             if len(args.args) == 1:
                 if sys.platform in ["linux", "linux2"]:
-                    if os.getuid() != 0:
-                        subprocess.run(["sudo", pyexec, " ".join(sys.argv)])
                     if os.path.exists(f"/etc/systemd/system/{service_name}.service"):
                         if args.args[0] == "start":
                             subprocess.run(["systemctl", "enable", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -329,7 +327,7 @@ def main():
                         if args.args[0] == "false":
                             return
                         execcommand = f"{pyexec} -m CMS prod" if "env" not in os.listdir() else f"{os.getcwd()}/env/bin/activate && {pyexec} -m CMS prod"
-                        open(f"{config.active.name.replace(' ', '')}-sapphire.service", "w").write(f"""[Unit]
+                        open(f"{service_name}.service", "w").write(f"""[Unit]
     Description={config.active.name} SapphireCMS Service
     After=network.target
 
@@ -343,7 +341,7 @@ def main():
     [Install]
     WantedBy=multi-user.target
     """)
-                        subprocess.run(["sudo", "ln", "-s", f"{os.getcwd()}/{config.active.name.replace(' ', '')}-sapphire.service", f"/etc/systemd/system/{service_name}.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["sudo", "ln", "-s", f"{os.getcwd()}/{service_name}.service", "/etc/systemd/system/"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         subprocess.run(["systemctl", "enable", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         subprocess.run(["systemctl", "start", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 elif sys.platform in ["darwin"]:
