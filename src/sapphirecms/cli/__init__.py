@@ -323,6 +323,7 @@ def main():
                     else:
                         if args.args[0] == "false":
                             return
+                        execcommand = f"{pyexec} -m CMS prod" if "env" not in os.listdir() else f"{os.getcwd()}/env/bin/activate && {pyexec} -m CMS prod"
                         open(f"{config.active.name.replace(' ', '')}-sapphire.service", "w").write(f"""[Unit]
     Description={config.active.name} SapphireCMS Service
     After=network.target
@@ -331,7 +332,7 @@ def main():
     Type=simple
     User={os.environ.get('USER', subprocess.run(["whoami"], stdout=subprocess.PIPE).stdout.decode("utf-8").strip())}
     WorkingDirectory={os.getcwd()}
-    ExecStart=python3 -m CMS prod
+    ExecStart={execcommand}
     Restart=on-failure
 
     [Install]
