@@ -305,23 +305,24 @@ def main():
                 import config
             except:
                 raise ImportError("Could not find a valid SapphireCMS environment")
+            service_name = f"{config.active.name.replace(' ', '')}-sapphirecms"
             args.args = [args.args] if args.args is not None else []
             if len(args.args) == 1:
                 if sys.platform in ["linux", "linux2"]:
                     if os.getuid() != 0:
                         subprocess.run(["sudo", pyexec, " ".join(sys.argv)])
-                    if os.path.exists(f"/etc/systemd/system/{config.active.name}-sapphirecms.service"):
+                    if os.path.exists(f"/etc/systemd/system/{service_name}.service"):
                         if args.args[0] == "start":
-                            subprocess.run(["systemctl", "enable", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            subprocess.run(["systemctl", "start", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "enable", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "start", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         elif args.args[0] == "stop":
-                            subprocess.run(["systemctl", "stop", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "stop", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         elif args.args[0] == "restart":
-                            subprocess.run(["systemctl", "restart", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "restart", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         elif args.args[0] == "delete":
-                            subprocess.run(["systemctl", "stop", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            subprocess.run(["systemctl", "disable", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            subprocess.run(["rm", f"/etc/systemd/system/{config.active.name}-sapphirecms.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "stop", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["systemctl", "disable", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.run(["rm", f"/etc/systemd/system/{service_name}.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         else:
                             raise ValueError("Invalid argument for command 'service'")
                     else:
@@ -342,9 +343,9 @@ def main():
     [Install]
     WantedBy=multi-user.target
     """)
-                        subprocess.run(["sudo", "ln", "-s", f"{os.getcwd()}/{config.active.name.replace(' ', '')}-sapphire.service", f"/etc/systemd/system/{config.active.name}-sapphirecms.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        subprocess.run(["systemctl", "enable", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        subprocess.run(["systemctl", "start", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["sudo", "ln", "-s", f"{os.getcwd()}/{config.active.name.replace(' ', '')}-sapphire.service", f"/etc/systemd/system/{service_name}.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["systemctl", "enable", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["systemctl", "start", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 elif sys.platform in ["darwin"]:
                     raise NotImplementedError("System services are not supported on macOS")
                 elif sys.platform in ["win32"]:
@@ -353,17 +354,17 @@ def main():
                     if not ctypes.windll.shell32.IsUserAnAdmin():
                         subprocess.run(["runas", "/user:Administrator", pyexec, " ".join(sys.argv)])
                         return
-                    if subprocess.run(f"sc query {config.active.name}-sapphirecms", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
-                        open(f"{os.getcwd()}\\{config.active.name}-sapphirecms.bat", "w").write(f"cd {os.getcwd()} && {pyexec} -m CMS prod")
-                        subprocess.run(["sc", "create", f"{config.active.name}-sapphirecms", "binPath=", f"\"C:\\Windows\\System32\\cmd.exe /c \"{os.getcwd()}\\{config.active.name}-sapphirecms.bat\"\"", "start=", "auto"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        print(" ".join(["sc", "create", f"{config.active.name}-sapphirecms", "binPath=", f"\"C:\\Windows\\System32\\cmd.exe /c \"{os.getcwd()}\\{config.active.name}-sapphirecms.bat\"\"", "start=", "auto"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+                    if subprocess.run(f"sc query {service_name}", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+                        open(f"{os.getcwd()}\\{service_name}.bat", "w").write(f"cd {os.getcwd()} && {pyexec} -m CMS prod")
+                        subprocess.run(["sc", "create", f"{service_name}", "binPath=", f"\"C:\\Windows\\System32\\cmd.exe /c \"{os.getcwd()}\\{service_name}.bat\"\"", "start=", "auto"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        print(" ".join(["sc", "create", f"{service_name}", "binPath=", f"\"C:\\Windows\\System32\\cmd.exe /c \"{os.getcwd()}\\{service_name}.bat\"\"", "start=", "auto"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
                     if args.args[0] == "start":
-                        subprocess.run(["sc", "start", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["sc", "start", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     elif args.args[0] == "stop":
-                        subprocess.run(["sc", "stop", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["sc", "stop", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     elif args.args[0] == "restart":
-                        subprocess.run(["sc", "stop", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        subprocess.run(["sc", "start", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["sc", "stop", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        subprocess.run(["sc", "start", f"{service_name}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 else:
                     raise NotImplementedError("System services are not supported on this platform")
             else:
