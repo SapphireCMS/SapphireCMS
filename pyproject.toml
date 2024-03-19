@@ -9,6 +9,8 @@ dependencies = [
     "pyjwt",
     "pymongo",
     "requests",
+    "halo",
+    "pygments",
 ]
 requires-python = ">=3.11"
 authors = [
