@@ -329,7 +329,7 @@ def main():
 
     [Service]
     Type=simple
-    User={os.getlogin()}
+    User={os.environ.get('USER', subprocess.run(["whoami"], stdout=subprocess.PIPE).stdout.decode("utf-8").strip())}
     WorkingDirectory={os.getcwd()}
     ExecStart=python3 -m CMS prod
     Restart=on-failure
