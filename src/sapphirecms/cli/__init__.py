@@ -28,7 +28,8 @@ from halo import Halo
 sys.path.append(os.getcwd())
 
 ver = sys.version_info
-pyexec = f"python{ver.major}.{ver.minor}" if sys.platform in ["linux", "linux2", "darwin"] else "python"
+# pyexec = f"python{ver.major}.{ver.minor}" if sys.platform in ["linux", "linux2", "darwin"] else "python"
+pyexec = sys.executable
 
 def install(name, env, mod):
     global pyexec
@@ -321,7 +322,7 @@ def main():
                     else:
                         if args.args[0] == "false":
                             return
-                        open(f"/etc/systemd/system/{config.active.name}-sapphirecms.service", "w").write(f"""[Unit]
+                        open(f"{config.active.name.replace(' ', '')}-sapphire.service", "w").write(f"""[Unit]
     Description={config.active.name} SapphireCMS Service
     After=network.target
 
@@ -335,6 +336,7 @@ def main():
     [Install]
     WantedBy=multi-user.target
     """)
+                        subprocess.run(["sudo", "ln", "-s", f"{os.getcwd()}/{config.active.name.replace(' ', '')}-sapphire.service", f"/etc/systemd/system/{config.active.name}-sapphirecms.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         subprocess.run(["systemctl", "enable", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         subprocess.run(["systemctl", "start", f"{config.active.name}-sapphirecms"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 elif sys.platform in ["darwin"]:
