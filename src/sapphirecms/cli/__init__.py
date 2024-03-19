@@ -305,6 +305,7 @@ def main():
                 import config
             except:
                 raise ImportError("Could not find a valid SapphireCMS environment")
+            args.args = [args.args] if args.args is not None else []
             if len(args.args) == 1:
                 if sys.platform in ["linux", "linux2"]:
                     if os.getuid() != 0:
